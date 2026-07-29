@@ -35,8 +35,8 @@
         <button type="submit">Update password</button>
       </form>
       <div class="actions" id="actions">
-        <a class="primary" href="biharigram://auth/reset">Open BihariGram</a>
-        <a href="biharigramadmin://auth/reset">Open Admin app</a>
+        <a class="primary app-link" data-app="BihariGram" href="biharigram://auth/reset">Open BihariGram</a>
+        <a class="app-link" data-app="BihariGram Admin" href="biharigramadmin://auth/reset">Open Admin app</a>
       </div>
       <small>BihariGram kabhi bhi email link par Aadhaar, card ya UPI PIN nahi maangta.</small>
     </section>
@@ -52,6 +52,10 @@
     else if(token&&type==="recovery"){title.textContent="Create new password";message.textContent="Identity verified. Ab naya password set karein.";form.style.display="grid";actions.style.display="none"}
     else if(token||type==="signup"){message.textContent="Email successfully verify ho gaya."}
     else{message.textContent="BihariGram secure account gateway ready hai."}
+    document.querySelectorAll(".app-link").forEach(link=>link.addEventListener("click",()=>{
+      message.classList.remove("error");
+      message.textContent=`${link.dataset.app} open ho raha hai… Agar app na khule to latest app isi phone par install/update karein.`;
+    }));
     form.addEventListener("submit",async event=>{
       event.preventDefault();
       const data=new FormData(form),password=String(data.get("password")||""),confirm=String(data.get("confirm")||"");
