@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>BihariGram Secure Account</title>
+  <meta name="description" content="Secure email verification and password recovery for BihariGram.">
+  <style>
+    :root{color-scheme:dark;--pink:#e84f93;--blue:#58b7e8}
+    *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#0d0a0e;color:#fff}
+    body{font-family:Arial,Helvetica,sans-serif}.shell{min-height:100dvh;display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 50% 0,rgba(232,79,147,.2),transparent 34%),radial-gradient(circle at 0 100%,rgba(88,183,232,.12),transparent 30%),#0d0a0e}
+    .card{width:min(100%,440px);padding:34px;border:1px solid #3b2a33;border-radius:28px;background:rgba(28,20,25,.94);box-shadow:0 30px 80px rgba(0,0,0,.34)}
+    .mark{width:58px;height:58px;display:grid;place-items:center;border-radius:18px;background:linear-gradient(135deg,var(--pink),#642145);font-size:29px;font-weight:900;box-shadow:0 14px 30px rgba(232,79,147,.22)}
+    .eyebrow{margin:24px 0 8px;color:#d780a7;font-size:11px;font-weight:900;letter-spacing:1.6px}
+    h1{margin:0;font-size:34px;line-height:1.04;letter-spacing:-1px}.message{min-height:42px;margin:14px 0 20px;color:#c3aeb8;font-size:14px;line-height:1.5}.message.error{color:#ff9aa5}
+    form{display:none;gap:13px}label{display:grid;gap:7px;color:#bda8b2;font-size:12px;font-weight:700}
+    input{width:100%;height:50px;border:1px solid #49323d;border-radius:14px;background:#21171c;color:#fff;padding:0 14px;font-size:16px;outline:none}
+    input:focus{border-color:var(--pink);box-shadow:0 0 0 3px rgba(232,79,147,.13)}
+    button,.actions a{min-height:48px;display:grid;place-items:center;border:0;border-radius:14px;background:#282027;color:#fff;padding:12px;text-decoration:none;font-size:13px;font-weight:900;cursor:pointer}
+    button,.actions .primary{background:linear-gradient(135deg,var(--pink),#8b2b5a)}.actions{display:grid;gap:10px}
+    small{display:block;margin-top:22px;color:#796a71;font-size:10px;line-height:1.5}
+    @media(max-width:480px){.shell{padding:0}.card{min-height:100dvh;width:100%;border:0;border-radius:0;padding:calc(42px + env(safe-area-inset-top)) 22px 30px}h1{font-size:31px}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="card">
+      <div class="mark">ब</div>
+      <p class="eyebrow">BIHARIGRAM · SECURE ACCOUNT</p>
+      <h1 id="title">Apna Bihar. Apne Log.</h1>
+      <p class="message" id="message">Secure link verify ho raha hai...</p>
+      <form id="password-form">
+        <label>New password<input name="password" type="password" minlength="8" autocomplete="new-password" required></label>
+        <label>Confirm password<input name="confirm" type="password" minlength="8" autocomplete="new-password" required></label>
+        <button type="submit">Update password</button>
+      </form>
+      <div class="actions" id="actions">
+        <a class="primary" href="biharigram://auth/reset">Open BihariGram</a>
+        <a href="biharigramadmin://auth/reset">Open Admin app</a>
+      </div>
+      <small>BihariGram kabhi bhi email link par Aadhaar, card ya UPI PIN nahi maangta.</small>
+    </section>
+  </main>
+  <script>
+    const SUPABASE_URL="https://mokgxadqjugbjgudspmq.supabase.co";
+    const PUBLISHABLE_KEY="sb_publishable_9dVtiKsGermT7-YTCKOwQw_gXOnKv0B";
+    const params=new URLSearchParams(location.hash.replace(/^#/,"")||location.search.replace(/^\?/,""));
+    const message=document.getElementById("message"),title=document.getElementById("title");
+    const form=document.getElementById("password-form"),actions=document.getElementById("actions");
+    const token=params.get("access_token")||"",type=params.get("type"),error=params.get("error_description");
+    if(error){title.textContent="Link needs attention";message.textContent=error.replaceAll("+"," ");message.classList.add("error")}
+    else if(token&&type==="recovery"){title.textContent="Create new password";message.textContent="Identity verified. Ab naya password set karein.";form.style.display="grid";actions.style.display="none"}
+    else if(token||type==="signup"){message.textContent="Email successfully verify ho gaya."}
+    else{message.textContent="BihariGram secure account gateway ready hai."}
+    form.addEventListener("submit",async event=>{
+      event.preventDefault();
+      const data=new FormData(form),password=String(data.get("password")||""),confirm=String(data.get("confirm")||"");
+      if(password.length<8){message.textContent="Minimum 8 characters rakhein.";return}
+      if(password!==confirm){message.textContent="Passwords match nahi kar rahe.";return}
+      message.textContent="Password securely update ho raha hai...";
+      try{
+        const response=await fetch(`${SUPABASE_URL}/auth/v1/user`,{method:"PUT",headers:{apikey:PUBLISHABLE_KEY,Authorization:`Bearer ${token}`,"Content-Type":"application/json"},body:JSON.stringify({password})});
+        const result=await response.json().catch(()=>({}));
+        if(!response.ok)throw new Error(result.message||"Password update failed");
+        history.replaceState({},document.title,location.pathname);title.textContent="Password updated";message.textContent="Password update ho gaya. Ab app mein login karein.";form.style.display="none";actions.style.display="grid";
+      }catch(err){title.textContent="Link needs attention";message.textContent=err instanceof Error?err.message:"Link expire ho gaya.";message.classList.add("error")}
+    });
+  </script>
+</body>
+</html>
